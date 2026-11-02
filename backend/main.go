@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"crypto/tls"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -80,8 +81,11 @@ var upgrader = websocket.Upgrader{
 
 func main() {
 	_ = godotenv.Load()
-
-	jwtSecret = []byte(env("JWT_SECRET", "dev-only-change-me"))
+secret := os.Getenv("JWT_SECRET")
+if secret == "" {
+    log.Fatal("JWT_SECRET environment variable is required")
+}
+jwtSecret = []byte(secret)
 
 	client, err := mongo.Connect(
 		ctx,
@@ -111,8 +115,12 @@ func main() {
 	}
 
 	rdb = redis.NewClient(&redis.Options{
-		Addr: env("REDIS_ADDR", "localhost:6379"),
-	})
+    Addr:      env("REDIS_ADDR", "localhost:6379"),
+    Password:  os.Getenv("REDIS_PASSWORD"),
+    TLSConfig: &tls.Config{
+        MinVersion: tls.VersionTLS12,
+    },
+})
 
 	if err := rdb.Ping(ctx).Err(); err != nil {
 		log.Fatal("Redis connection: ", err)

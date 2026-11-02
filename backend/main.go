@@ -159,7 +159,7 @@ func cors() gin.HandlerFunc {
 		)
 		c.Header(
 			"Access-Control-Allow-Methods",
-			"GET, POST, OPTIONS",
+			"GET, POST, PUT, DELETE, OPTIONS",
 		)
 		c.Header("Access-Control-Allow-Credentials", "true")
 

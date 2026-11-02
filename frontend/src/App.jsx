@@ -253,16 +253,50 @@ export default function App() {
     }
   }
 
-  async function copyLink() {
-    try {
-      await navigator.clipboard.writeText(
-        location.origin + '/poll/' + pollId
-      );
-      setNotice('Share link copied');
-    } catch {
-      setError('Unable to copy the share link');
+ async function copyLink() {
+  const shareUrl = `${window.location.origin}/poll/${pollId}`;
+
+  try {
+    // Preferred method: native share on supported mobile devices
+    if (navigator.share) {
+      await navigator.share({
+        title: "Join this PulseVote poll",
+        url: shareUrl,
+      });
+      setNotice("Share link opened");
+      return;
+    }
+
+    // Fallback: Clipboard API
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(shareUrl);
+      setNotice("Share link copied");
+      return;
+    }
+
+    // Fallback for browsers without Clipboard API support
+    const textArea = document.createElement("textarea");
+    textArea.value = shareUrl;
+    textArea.style.position = "fixed";
+    textArea.style.opacity = "0";
+    document.body.appendChild(textArea);
+    textArea.select();
+
+    const copied = document.execCommand("copy");
+    document.body.removeChild(textArea);
+
+    if (copied) {
+      setNotice("Share link copied");
+    } else {
+      setError(`Copy failed. Please copy this link: ${shareUrl}`);
+    }
+  } catch (error) {
+    // A user cancelling the native share sheet is not an error
+    if (error.name !== "AbortError") {
+      setError(`Unable to share. Copy this link: ${shareUrl}`);
     }
   }
+}
 
   async function deletePoll() {
     if (!pollId || !window.confirm('Delete this poll permanently?')) return;
